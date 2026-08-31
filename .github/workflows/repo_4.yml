@@ -46,6 +46,10 @@ jobs:
           echo "ACCOUNT_1_PROXY_PASSWORD=$(jq -r .proxy_password_4 runner_env.json)" >> .env
           echo "ACCOUNT_1_SAVE_FINGERPRINT_MOBILE=$(jq -r .save_fingerprint_mobile_4 runner_env.json)" >> .env
           echo "ACCOUNT_1_SAVE_FINGERPRINT_DESKTOP=$(jq -r .save_fingerprint_desktop_4 runner_env.json)" >> .env
+          MONGO_URI=$(jq -r .session_mongodb_uri runner_env.json)
+          if [ "$MONGO_URI" != "null" ] && [ -n "$MONGO_URI" ]; then
+             echo "SESSION_MONGODB_URI=$MONGO_URI" >> .env
+          fi
           DW_URL=$(jq -r .discord_webhook_url runner_env.json)
           if [ "$DW_URL" != "null" ] && [ -n "$DW_URL" ]; then
              echo "CONFIG_DISCORD_ENABLED=true" >> .env
