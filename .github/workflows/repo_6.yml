@@ -1,0 +1,116 @@
+name: Repository 6 - Slot 6 (5:00 AM IST Target)
+on:
+  schedule:
+    - cron: "0 21 * * *" # Starts with buffer, runs around Slot 6 (5:00 AM IST Target)
+  workflow_dispatch:
+
+concurrency:
+  group: daily-docker-6-${github.ref}
+  cancel-in-progress: false
+
+jobs:
+  docker-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 290
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: |
+          chmod +x run.sh
+
+      - name: Matrix DB Bootstrapper (V4 Architecture)
+        env:
+          ORCHESTRATOR_TOKEN: ${{ secrets.ORCHESTRATOR_TOKEN }}
+          GROUP_ID: ${{ secrets.GROUP_ID }}
+          MATRIX_DB_HOST: ${{ secrets.MATRIX_DB_HOST }}
+        run: |
+          echo "Contacting Matrix DB for Pod Environment..."
+          curl -s -H "Authorization: Bearer $ORCHESTRATOR_TOKEN" "$MATRIX_DB_HOST/api/farm/runner-env?group=$GROUP_ID" > runner_env.json
+
+          # Repo 6 is assigned to Slot 6. It only pulls ACCOUNT_6.
+          echo "ACCOUNT_1_EMAIL=$(jq -r .account_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PASSWORD=$(jq -r .password_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_TOTP_SECRET=$(jq -r .totp_secret_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_RECOVERY_EMAIL=$(jq -r .recovery_email_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_GEO_LOCALE=$(jq -r .geo_locale_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_LANG_CODE=$(jq -r .lang_code_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_HTTP=$(jq -r .proxy_http_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_URL=$(jq -r .proxy_url_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_PORT=$(jq -r .proxy_port_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_USERNAME=$(jq -r .proxy_username_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_PASSWORD=$(jq -r .proxy_password_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_SAVE_FINGERPRINT_MOBILE=$(jq -r .save_fingerprint_mobile_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_SAVE_FINGERPRINT_DESKTOP=$(jq -r .save_fingerprint_desktop_6 runner_env.json)" >> .env
+          MONGO_URI=$(jq -r .session_mongodb_uri runner_env.json)
+          if [ "$MONGO_URI" != "null" ] && [ -n "$MONGO_URI" ]; then
+             echo "SESSION_MONGODB_URI=$MONGO_URI" >> .env
+          fi
+          DW_URL=$(jq -r .discord_webhook_url runner_env.json)
+          if [ "$DW_URL" != "null" ] && [ -n "$DW_URL" ]; then
+             echo "CONFIG_DISCORD_ENABLED=true" >> .env
+             echo "CONFIG_DISCORD_URL=$DW_URL" >> .env
+          fi
+
+          echo "========================================="
+          echo "  Currently loading data for SLOT 6"
+          echo "========================================="
+          echo "Successfully generated .env file from Matrix DB!"
+
+      - name: Run Farm (V4)
+        run: |
+          ./run.sh 6
+
+      - name: Keep Repository Active (Prevent 60-Day Disable)
+        if: always()
+        env:
+          # Configuration for Keepalive commit
+          # 'always'   = Commit every single time the action runs (Great for testing!)
+          # 'weekly'   = Commit once every 7 days
+          # '25_days'  = Commit once every 25 days (Very safe buffer)
+          # 'monthly'  = Commit once every 30 days
+          # 'default'  = Commit once every 50 days (Cleanest history)
+          KEEPALIVE_MODE: '25_days'
+        run: |
+          echo "Checking keepalive policy..."
+
+          LAST_COMMIT_TS=$(git log -1 --format="%ct" || echo "0")
+          CURRENT_TS=$(date +%s)
+          DAYS_SINCE_COMMIT=$(( (CURRENT_TS - LAST_COMMIT_TS) / 86400 ))
+          echo "Days since last commit: $DAYS_SINCE_COMMIT"
+
+          SHOULD_COMMIT=false
+          if [ "$KEEPALIVE_MODE" = "always" ]; then
+            SHOULD_COMMIT=true
+          elif [ "$KEEPALIVE_MODE" = "weekly" ] && [ "$DAYS_SINCE_COMMIT" -ge 7 ]; then
+            SHOULD_COMMIT=true
+          elif [ "$KEEPALIVE_MODE" = "25_days" ] && [ "$DAYS_SINCE_COMMIT" -ge 25 ]; then
+            SHOULD_COMMIT=true
+          elif [ "$KEEPALIVE_MODE" = "monthly" ] && [ "$DAYS_SINCE_COMMIT" -ge 30 ]; then
+            SHOULD_COMMIT=true
+          elif [ "$KEEPALIVE_MODE" = "default" ] && [ "$DAYS_SINCE_COMMIT" -ge 50 ]; then
+            SHOULD_COMMIT=true
+          fi
+
+          if [ "$SHOULD_COMMIT" = "true" ]; then
+            echo "Keepalive condition met. Creating automated commit..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github_keepalive
+
+            git add .github_keepalive
+            if git diff --staged --quiet; then
+               echo "No changes to commit."
+            else
+               git commit -m "chore: automated keepalive commit to prevent workflow deactivation"
+               git push
+               echo "Keepalive commit pushed successfully."
+            fi
+          else
+            echo "Keepalive condition not met (Mode: $KEEPALIVE_MODE). Skipping commit."
+          fi
