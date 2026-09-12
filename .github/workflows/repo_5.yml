@@ -1,11 +1,11 @@
-name: Repository 5 - Slot 5 (3:30 AM IST Target)
+name: Repository 6 - Slot 6 (5:00 AM IST Target)
 on:
   schedule:
-    - cron: "0 20 * * *" # Starts with buffer, runs around Slot 5 (3:30 AM IST Target)
+    - cron: "0 21 * * *" # Starts with buffer, runs around Slot 6 (5:00 AM IST Target)
   workflow_dispatch:
 
 concurrency:
-  group: daily-docker-5-${github.ref}
+  group: daily-docker-6-${github.ref}
   cancel-in-progress: false
 
 jobs:
@@ -32,20 +32,20 @@ jobs:
           echo "Contacting Matrix DB for Pod Environment..."
           curl -s -H "Authorization: Bearer $ORCHESTRATOR_TOKEN" "$MATRIX_DB_HOST/api/farm/runner-env?group=$GROUP_ID" > runner_env.json
 
-          # Repo 5 is assigned to Slot 5. It only pulls ACCOUNT_5.
-          echo "ACCOUNT_1_EMAIL=$(jq -r .account_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PASSWORD=$(jq -r .password_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_TOTP_SECRET=$(jq -r .totp_secret_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_RECOVERY_EMAIL=$(jq -r .recovery_email_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_GEO_LOCALE=$(jq -r .geo_locale_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_LANG_CODE=$(jq -r .lang_code_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PROXY_HTTP=$(jq -r .proxy_http_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PROXY_URL=$(jq -r .proxy_url_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PROXY_PORT=$(jq -r .proxy_port_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PROXY_USERNAME=$(jq -r .proxy_username_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_PROXY_PASSWORD=$(jq -r .proxy_password_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_SAVE_FINGERPRINT_MOBILE=$(jq -r .save_fingerprint_mobile_5 runner_env.json)" >> .env
-          echo "ACCOUNT_1_SAVE_FINGERPRINT_DESKTOP=$(jq -r .save_fingerprint_desktop_5 runner_env.json)" >> .env
+          # Repo 6 is assigned to Slot 6. It only pulls ACCOUNT_6.
+          echo "ACCOUNT_1_EMAIL=$(jq -r .account_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PASSWORD=$(jq -r .password_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_TOTP_SECRET=$(jq -r .totp_secret_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_RECOVERY_EMAIL=$(jq -r .recovery_email_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_GEO_LOCALE=$(jq -r .geo_locale_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_LANG_CODE=$(jq -r .lang_code_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_HTTP=$(jq -r .proxy_http_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_URL=$(jq -r .proxy_url_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_PORT=$(jq -r .proxy_port_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_USERNAME=$(jq -r .proxy_username_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_PROXY_PASSWORD=$(jq -r .proxy_password_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_SAVE_FINGERPRINT_MOBILE=$(jq -r .save_fingerprint_mobile_6 runner_env.json)" >> .env
+          echo "ACCOUNT_1_SAVE_FINGERPRINT_DESKTOP=$(jq -r .save_fingerprint_desktop_6 runner_env.json)" >> .env
           MONGO_URI=$(jq -r .session_mongodb_uri runner_env.json)
           if [ "$MONGO_URI" != "null" ] && [ -n "$MONGO_URI" ]; then
              echo "SESSION_MONGODB_URI=$MONGO_URI" >> .env
@@ -57,13 +57,13 @@ jobs:
           fi
 
           echo "========================================="
-          echo "  Currently loading data for SLOT 5"
+          echo "  Currently loading data for SLOT 6"
           echo "========================================="
           echo "Successfully generated .env file from Matrix DB!"
 
       - name: Run Farm (V4)
         run: |
-          ./run.sh 5
+          ./run.sh 6
 
       - name: Keep Repository Active (Prevent 60-Day Disable)
         if: always()
